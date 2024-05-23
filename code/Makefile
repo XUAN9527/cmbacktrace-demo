@@ -59,8 +59,10 @@ C_SOURCES += $(C_APP_SOURCES)
 C_SOURCES += $(C_DRV_SOURCES)
 
 ASM_SOURCES =  \
-CMSIS/device/startup/startup_n32l40x_gcc.s \
-components/cm_backtrace/fault_handler/gcc/cmb_fault.s
+CMSIS/device/startup/startup_n32l40x_gcc.s
+
+ASM_SOURCES2 =  \
+components/cm_backtrace/fault_handler/gcc/cmb_fault.S
 
 # 指定交叉编译工具链的 编译器、连接器、库管理器、
 CROSS_COMPILE=arm-none-eabi-
@@ -104,6 +106,7 @@ TARGET  = $(OUTPUT_DIR)/app
 # C源文件、汇编源文件的目标文件路径
 C_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(C_SOURCES:.c=.o))
 ASM_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES:.s=.o))
+ASM_OBJECTS2 = $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES2:.S=.o))
 
 .PHONY : clean all
 
@@ -144,8 +147,8 @@ $(TARGET).list: $(TARGET).elf
 $(TARGET).bin: $(TARGET).elf
 	$(OC) $(OCFLAGS) $(TARGET).elf $(TARGET).bin
 
-$(TARGET).elf: $(ASM_OBJECTS) $(C_OBJECTS)
-	$(CC) $(ASM_OBJECTS) $(C_OBJECTS) $(LDFLAGS) -Wl,-Map=$(TARGET).map -o $(TARGET).elf
+$(TARGET).elf: $(ASM_OBJECTS) $(ASM_OBJECTS2) $(C_OBJECTS)
+	$(CC) $(ASM_OBJECTS) $(ASM_OBJECTS2) $(C_OBJECTS) $(LDFLAGS) -Wl,-Map=$(TARGET).map -o $(TARGET).elf
 
 #$(C_OBJECTS): $(C_SOURCES)
 

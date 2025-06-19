@@ -361,6 +361,11 @@ size_t cm_backtrace_call_stack(uint32_t *buffer, size_t size, uint32_t sp) {
     return depth;
 }
 
+#include "dcd_user.h"
+#define ERRORLOG_FLASH_BASIC_ADDR 	USER_DATA_ADDR
+#define ERRORLOG_FLASH_OFFSET 		(0 * 1024)
+#define ERRORLOG_FLASH_TARGET_ADDR 	(ERRORLOG_FLASH_BASIC_ADDR + ERRORLOG_FLASH_OFFSET)
+#define ERRORLOG_FLASH_TARGET_SIZE 	(2 * 1024)
 /**
  * dump function call stack
  *
@@ -380,10 +385,24 @@ static void print_call_stack(uint32_t sp) {
     if (cur_depth) {
         call_stack_info[cur_depth * (8 + 1) - 1] = '\0';
         cmb_println(print_info[PRINT_CALL_STACK_INFO], fw_name, CMB_ELF_FILE_EXTENSION_NAME, call_stack_info);
+
+        uint8_t buff[512] = {0};
+        snprintf((char *)buff, sizeof(buff), print_info[PRINT_CALL_STACK_INFO], fw_name, CMB_ELF_FILE_EXTENSION_NAME, call_stack_info);
+        dcd_port_erase(ERRORLOG_FLASH_TARGET_ADDR, ERRORLOG_FLASH_TARGET_SIZE);
+        dcd_port_write(ERRORLOG_FLASH_TARGET_ADDR, (const uint32_t *)buff, strlen((char *)buff) + 1);
     } else {
         cmb_println(print_info[PRINT_CALL_STACK_ERR]);
     }
 }
+
+static void fault_read_string(void)
+{
+	uint8_t buff[512] = {0};
+	dcd_port_read(ERRORLOG_FLASH_TARGET_ADDR, (uint32_t *)buff, sizeof(buff));
+	buff[512-1] = 0;
+	logPrintln("CmBacktrace hard fault = %s", buff);
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC)|SHELL_CMD_DISABLE_RETURN, fault_read_string, fault_read_string, fault_read_string);
 
 /**
  * backtrace for assert

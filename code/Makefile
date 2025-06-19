@@ -14,6 +14,7 @@ INCLUDE =  \
 -Iapplication/inc \
 -Icomponents/letter_shell \
 -Icomponents/soft_timer \
+-Icomponents/iap \
 -Icomponents/cm_backtrace
 
 # APP源文件
@@ -35,6 +36,7 @@ driver/src/drv_pwm_input*.c \
 driver/src/drv_spi*.c \
 driver/src/drv_usart*.c \
 $(wildcard components/letter_shell/*.c) \
+$(wildcard components/iap/*.c) \
 components/soft_timer/soft_timer.c \
 components/cm_backtrace/cm_backtrace.c \
 components/cm_backtrace/fault_test.c
@@ -105,8 +107,8 @@ TARGET  = $(OUTPUT_DIR)/app
 
 # C源文件、汇编源文件的目标文件路径
 C_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(C_SOURCES:.c=.o))
-ASM_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES:.s=.o))
-ASM_OBJECTS2 = $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES2:.S=.o))
+ASM_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES:.s=.o)) \
+			  $(addprefix $(OUTPUT_DIR)/, $(ASM_SOURCES2:.S=.o))
 
 .PHONY : clean all
 
@@ -147,8 +149,8 @@ $(TARGET).list: $(TARGET).elf
 $(TARGET).bin: $(TARGET).elf
 	$(OC) $(OCFLAGS) $(TARGET).elf $(TARGET).bin
 
-$(TARGET).elf: $(ASM_OBJECTS) $(ASM_OBJECTS2) $(C_OBJECTS)
-	$(CC) $(ASM_OBJECTS) $(ASM_OBJECTS2) $(C_OBJECTS) $(LDFLAGS) -Wl,-Map=$(TARGET).map -o $(TARGET).elf
+$(TARGET).elf: $(ASM_OBJECTS) $(C_OBJECTS)
+	$(CC) $(ASM_OBJECTS) $(C_OBJECTS) $(LDFLAGS) -Wl,-Map=$(TARGET).map -o $(TARGET).elf
 
 #$(C_OBJECTS): $(C_SOURCES)
 
@@ -164,6 +166,9 @@ $(OUTPUT_DIR)/%.o: %.s
 	mkdir -p $(dir $@)
 	$(CC) $(INCLUDE) $(CFLAGS) -c $< -o $@
 
+$(OUTPUT_DIR)/%.o: %.S
+	mkdir -p $(dir $@)
+	$(CC) $(INCLUDE) $(CFLAGS) -c $< -o $@
 
 -include $(wildcard $(OUTPUT_DIR)/**/*.d)	# 包含所有生成的依赖文件，避免重复编译、提高效率
 -include $(wildcard $(OUTPUT_DIR)/**/*/*.d)	# 包含所有生成的依赖文件，避免重复编译、提高效率
